@@ -40,6 +40,8 @@ export default function App() {
   const [editNameValue, setEditNameValue] = useState('');
   const [editNumberValue, setEditNumberValue] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('تم التعديل بنجاح');
+  const [isSparkling, setIsSparkling] = useState(false);
   
   // Persistence Logic
   const [accounts, setAccounts] = useState<Account[]>(() => {
@@ -85,6 +87,14 @@ export default function App() {
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const [investmentAccount, setInvestmentAccount] = useState<Account | null>(null);
+
+  useEffect(() => {
+    if (investmentAccount?.amount !== undefined) {
+      setIsSparkling(true);
+      const timer = setTimeout(() => setIsSparkling(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [investmentAccount?.amount]);
 
   // Investment Form State
   const [invDate, setInvDate] = useState(new Date().toISOString().split('T')[0]);
@@ -183,6 +193,7 @@ export default function App() {
     setAccounts(updatedAccounts);
     setIsEditNameModalOpen(false);
     setSelectedEditId('');
+    setToastMessage('تم التعديل بنجاح');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
   };
@@ -346,6 +357,9 @@ export default function App() {
     setIsInvestmentModalOpen(false);
     resetInvestmentForm(updatedAcc);
     setCurrentView('investments');
+    setToastMessage('تمت العملية');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
   };
 
   const handleDeleteOperation = (operationId: string) => {
@@ -596,7 +610,7 @@ export default function App() {
               <div className="relative z-10 flex justify-between items-center">
                 <div>
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">الرصيد المتبقي</p>
-                  <h2 className="text-4xl font-mono font-bold text-emerald-400">
+                  <h2 className={`text-4xl font-mono font-bold text-emerald-400 transition-all duration-300 ${isSparkling ? 'animate-sparkle' : ''}`}>
                     {investmentAccount?.amount} <span className="text-lg">EGP</span>
                   </h2>
                 </div>
@@ -1510,7 +1524,7 @@ export default function App() {
             <div className="bg-emerald-500/10 rounded-full p-2 flex items-center justify-center">
               <Check className="w-5 h-5 text-emerald-600" />
             </div>
-            <span className="tracking-wide">تم التعديل بنجاح</span>
+            <span className="tracking-wide">{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
