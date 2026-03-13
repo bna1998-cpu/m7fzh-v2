@@ -31,6 +31,19 @@ interface Account {
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'accounts' | 'investments'>('accounts');
+
+  // Disable Pull-to-refresh
+  useEffect(() => {
+    const touchHandler = (e: TouchEvent) => {
+      // Prevent touchmove when at the top of the page to block pull-to-refresh
+      if (window.scrollY <= 0 && e.touches[0].pageY > 0) {
+        if (e.cancelable) e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', touchHandler, { passive: false });
+    return () => document.removeEventListener('touchmove', touchHandler);
+  }, []);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditDeleteModalOpen, setIsEditDeleteModalOpen] = useState(false);
   const [isEditNameModalOpen, setIsEditNameModalOpen] = useState(false);
