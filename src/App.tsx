@@ -34,7 +34,6 @@ export default function App() {
 
   // Disable Pull-to-refresh
   useEffect(() => {
-    // Force overscroll behavior to none on body
     document.body.style.overscrollBehaviorY = 'none';
     
     let startY = 0;
@@ -44,20 +43,36 @@ export default function App() {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      const currentY = e.touches[0].pageY;
-      // Check if the user is swiping down (pulling)
+      const touch = e.touches[0];
+      const currentY = touch.pageY;
       const isSwipingDown = currentY > startY;
       
-      // If we are at the top of the window and swiping down, prevent it
-      // This is the specific action that triggers pull-to-refresh in WebViews
-      if (isSwipingDown && window.scrollY <= 0) {
-        if (e.cancelable) {
-          e.preventDefault();
+      // Find the scrollable parent of the element being touched
+      let el = e.target as HTMLElement | null;
+      while (el && el !== document.body) {
+        const style = window.getComputedStyle(el);
+        const overflowY = style.getPropertyValue('overflow-y');
+        const isScrollable = overflowY === 'auto' || overflowY === 'scroll';
+        const canScrollUp = el.scrollTop > 0;
+
+        if (isScrollable) {
+          if (isSwipingDown && !canScrollUp) {
+            // At the top of a scrollable element and trying to pull down
+            // We only prevent if it's the main container or if we want to block pull-to-refresh
+            if (e.cancelable) e.preventDefault();
+          }
+          // If it's scrollable and we can scroll, or we are swiping up, don't prevent anything
+          return;
         }
+        el = el.parentElement;
+      }
+
+      // Fallback for non-scrollable areas
+      if (isSwipingDown && window.scrollY <= 0) {
+        if (e.cancelable) e.preventDefault();
       }
     };
 
-    // Use { passive: false } as requested to allow preventDefault()
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     
