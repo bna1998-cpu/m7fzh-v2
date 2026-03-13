@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Home, ChevronDown, PlusCircle, Plus, Trash2, Wallet, X, Calendar, ArrowUpRight, ArrowDownLeft, Hash, Tag, DollarSign, Layers, Percent, Eye, RefreshCw, ArrowRight, FileText, Download, Check } from 'lucide-react';
+import { Home, ChevronDown, PlusCircle, Plus, Trash2, Wallet, X, Calendar, ArrowUpRight, ArrowDownLeft, Hash, Tag, DollarSign, Layers, Percent, Eye, ArrowRight, FileText, Download, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, useEffect } from 'react';
 
@@ -37,10 +37,12 @@ export default function App() {
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const [balanceOpType, setBalanceOpType] = useState<'deposit' | 'withdraw'>('deposit');
   const [balanceValue, setBalanceValue] = useState('');
+  const [balanceError, setBalanceError] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
   const [editNumberValue, setEditNumberValue] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('تم التعديل بنجاح');
+  const [toastPosition, setToastPosition] = useState<'bottom' | 'center'>('bottom');
   const [isSparkling, setIsSparkling] = useState(false);
   
   // Persistence Logic
@@ -105,12 +107,6 @@ export default function App() {
   const [invPrice, setInvPrice] = useState('');
   const [invCommission, setInvCommission] = useState('');
 
-  // Pull to refresh logic (Only for Accounts view)
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [startY, setStartY] = useState(0);
-  const REFRESH_THRESHOLD = 80;
-
   const resetInvestmentForm = (account?: Account | null) => {
     setInvDate(new Date().toISOString().split('T')[0]);
     setInvType('deposit');
@@ -129,36 +125,14 @@ export default function App() {
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (currentView !== 'accounts') return;
-    // Only allow pull-to-refresh if touch starts in the top half of the screen
-    if (window.scrollY === 0 && e.touches[0].clientY < window.innerHeight / 2) {
-      setStartY(e.touches[0].pageY);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (currentView !== 'accounts' || startY === 0) return;
-    const currentY = e.touches[0].pageY;
-    const distance = currentY - startY;
-    if (distance > 0 && window.scrollY === 0) {
-      setPullDistance(Math.min(distance, REFRESH_THRESHOLD + 20));
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (currentView === 'accounts' && pullDistance >= REFRESH_THRESHOLD) {
-      setIsRefreshing(true);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }
-    setPullDistance(0);
-    setStartY(0);
-  };
-
   const handleEnterAccount = () => {
-    if (!selectedAccountId) return;
+    if (!selectedAccountId) {
+      setToastMessage('اختر حساب من القائمة');
+      setToastPosition('center');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+      return;
+    }
     const account = accounts.find(acc => acc.id === selectedAccountId);
     if (account) {
       sessionStorage.setItem('activeAccountName', account.name);
@@ -194,6 +168,7 @@ export default function App() {
     setIsEditNameModalOpen(false);
     setSelectedEditId('');
     setToastMessage('تم التعديل بنجاح');
+    setToastPosition('bottom');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
   };
@@ -232,7 +207,10 @@ export default function App() {
   const handleSaveBalanceOp = () => {
     if (!selectedEditId) return;
     const opAmount = parseFloat(balanceValue) || 0;
-    if (opAmount <= 0) return;
+    if (opAmount <= 0) {
+      setBalanceError(true);
+      return;
+    }
 
     const updatedAccounts = accounts.map(acc => {
       if (acc.id === selectedEditId) {
@@ -277,6 +255,13 @@ export default function App() {
       setAccounts(updatedAccounts);
       setIsBalanceModalOpen(false);
       setBalanceValue('');
+      setBalanceError(false);
+      
+      setToastMessage(balanceOpType === 'deposit' ? 'تم اضافة الرصيد' : 'تم سحب الرصيد');
+      setToastPosition('bottom');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 1000);
+
       if (investmentAccount && selectedEditId === investmentAccount.id) {
         setInvestmentAccount(updatedAccounts.find(acc => acc.id === selectedEditId) || null);
       }
@@ -358,6 +343,7 @@ export default function App() {
     resetInvestmentForm(updatedAcc);
     setCurrentView('investments');
     setToastMessage('تمت العملية');
+    setToastPosition('bottom');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
   };
@@ -420,6 +406,12 @@ export default function App() {
 
     setAccounts([...accounts, newAccount]);
     
+    // Show Success Toast
+    setToastMessage('تم انشاء الحساب');
+    setToastPosition('bottom');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 1000);
+    
     // Reset and Close
     setCustomerName('');
     setAmount('');
@@ -444,29 +436,7 @@ export default function App() {
     <div 
       className="h-screen bg-slate-50 flex flex-col relative overflow-hidden" 
       dir="rtl"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
-      {/* Pull to Refresh Indicator (Only for Accounts view) */}
-      {currentView === 'accounts' && (
-        <div 
-          className="fixed top-0 left-0 right-0 z-[100] flex justify-center pointer-events-none"
-          style={{ 
-            transform: `translateY(${pullDistance > 0 ? pullDistance - 40 : -40}px)`,
-            opacity: pullDistance > 20 ? 1 : 0,
-            transition: pullDistance === 0 ? 'transform 0.3s ease, opacity 0.3s ease' : 'none'
-          }}
-        >
-          <div className="bg-white p-2 rounded-full shadow-xl border border-slate-100">
-            <RefreshCw 
-              className={`w-6 h-6 text-emerald-500 ${isRefreshing ? 'animate-spin' : ''}`} 
-              style={{ transform: `rotate(${pullDistance * 2}deg)` }}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Professional Header */}
       <header className="bg-slate-900 pt-6 pb-8 px-6 rounded-b-[2rem] shadow-lg relative overflow-hidden sticky top-0 z-30">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
@@ -510,7 +480,10 @@ export default function App() {
                   value={selectedAccountId}
                   onChange={(e) => setSelectedAccountId(e.target.value)}
                 >
-                  <option value="" disabled>اختر الحساب من القائمة...</option>
+                  <option value="" disabled hidden>اختر حساب للدخول به</option>
+                  {accounts.length === 0 && (
+                    <option disabled>انشأ حساب لكى يظهر فى القائمة</option>
+                  )}
                   {accounts.map(acc => (
                     <option key={acc.id} value={acc.id}>({acc.customerNumber}) {acc.name}</option>
                   ))}
@@ -564,6 +537,8 @@ export default function App() {
               onClick={() => {
                 setBalanceOpType('deposit');
                 setSelectedEditId(selectedAccountId || '');
+                setBalanceValue('');
+                setBalanceError(false);
                 setIsBalanceModalOpen(true);
               }}
               className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 group"
@@ -582,6 +557,8 @@ export default function App() {
               onClick={() => {
                 setBalanceOpType('withdraw');
                 setSelectedEditId(selectedAccountId || '');
+                setBalanceValue('');
+                setBalanceError(false);
                 setIsBalanceModalOpen(true);
               }}
               className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 group"
@@ -944,7 +921,10 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsBalanceModalOpen(false)}
+              onClick={() => {
+                setIsBalanceModalOpen(false);
+                setBalanceError(false);
+              }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
             
@@ -961,7 +941,10 @@ export default function App() {
                   {balanceOpType === 'deposit' ? 'اختر العميل' : 'سحب رصيد'}
                 </span>
                 <button 
-                  onClick={() => setIsBalanceModalOpen(false)}
+                  onClick={() => {
+                    setIsBalanceModalOpen(false);
+                    setBalanceError(false);
+                  }}
                   className="p-2 hover:bg-slate-100 rounded-full transition-colors"
                 >
                   <X className="w-6 h-6 text-slate-400" />
@@ -969,6 +952,14 @@ export default function App() {
               </div>
 
               <div className="p-8 space-y-6">
+                {/* Customer Number (Auto-filled) */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-400 text-right mr-1">رقم العميل</label>
+                  <div className="bg-slate-100 p-4 rounded-2xl text-right font-bold text-lg text-slate-600 border border-slate-200">
+                    {selectedEditId ? accounts.find(acc => acc.id === selectedEditId)?.customerNumber : '---'}
+                  </div>
+                </div>
+
                 {/* Customer Selection Dropdown */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-400 text-right mr-1">اختر العميل المستهدف</label>
@@ -993,14 +984,6 @@ export default function App() {
                     animate={{ opacity: 1, height: 'auto' }}
                     className="space-y-6"
                   >
-                    {/* Customer Number (Auto-filled) */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-slate-400 text-right mr-1">رقم العميل</label>
-                      <div className="bg-slate-100 p-4 rounded-2xl text-right font-bold text-lg text-slate-600 border border-slate-200">
-                        {accounts.find(acc => acc.id === selectedEditId)?.customerNumber}
-                      </div>
-                    </div>
-
                     {/* Amount Input */}
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-slate-400 text-right mr-1">
@@ -1008,11 +991,14 @@ export default function App() {
                       </label>
                       <input 
                         type="number" 
-                        placeholder="0.00"
+                        placeholder={balanceError ? "لابد من ادخال مبلغ" : "0.00"}
                         autoFocus
                         value={balanceValue}
-                        onChange={(e) => setBalanceValue(e.target.value)}
-                        className={`w-full bg-slate-50 p-5 rounded-2xl text-right focus:outline-none focus:ring-2 border border-transparent transition-all font-bold text-2xl text-slate-800 ${balanceOpType === 'deposit' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' : 'focus:ring-amber-500/20 focus:border-amber-500'}`}
+                        onChange={(e) => {
+                          setBalanceValue(e.target.value);
+                          setBalanceError(false);
+                        }}
+                        className={`w-full bg-slate-50 p-5 rounded-2xl text-right focus:outline-none focus:ring-2 border border-transparent transition-all font-bold text-2xl text-slate-800 ${balanceError ? 'placeholder:text-red-500 border-red-200 bg-red-50' : ''} ${balanceOpType === 'deposit' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' : 'focus:ring-amber-500/20 focus:border-amber-500'}`}
                       />
                     </div>
 
@@ -1519,7 +1505,7 @@ export default function App() {
               transition: { type: "spring", damping: 25, stiffness: 300 }
             }}
             exit={{ opacity: 0, scale: 0.95, y: 10, transition: { duration: 0.2 } }}
-            className="fixed bottom-12 left-1/2 z-[200] bg-white/90 backdrop-blur-md border border-slate-200/50 text-slate-800 px-6 py-4 rounded-2xl shadow-[0_15px_40px_-10px_rgba(0,0,0,0.1)] font-bold text-base flex items-center gap-4 min-w-[180px] justify-center"
+            className={`fixed ${toastPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-12'} left-1/2 z-[200] bg-white/90 backdrop-blur-md border border-slate-200/50 text-slate-800 px-6 py-4 rounded-2xl shadow-[0_15px_40px_-10px_rgba(0,0,0,0.1)] font-bold text-base flex items-center gap-4 min-w-[180px] justify-center`}
           >
             <div className="bg-emerald-500/10 rounded-full p-2 flex items-center justify-center">
               <Check className="w-5 h-5 text-emerald-600" />
