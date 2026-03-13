@@ -34,20 +34,37 @@ export default function App() {
 
   // Disable Pull-to-refresh
   useEffect(() => {
+    // Force overscroll behavior to none on body
     document.body.style.overscrollBehaviorY = 'none';
     
-    const touchHandler = (e: TouchEvent) => {
-      // Prevent touchmove when at the top of the page to block pull-to-refresh
-      // Since we are using a scrollable container, window.scrollY will likely be 0
-      // We should check the container's scrollTop if we want to be precise,
-      // but the user's requested logic is to block it at window level.
-      if (window.scrollY <= 0 && e.touches[0].pageY > 0) {
-        if (e.cancelable) e.preventDefault();
+    let startY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].pageY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const currentY = e.touches[0].pageY;
+      // Check if the user is swiping down (pulling)
+      const isSwipingDown = currentY > startY;
+      
+      // If we are at the top of the window and swiping down, prevent it
+      // This is the specific action that triggers pull-to-refresh in WebViews
+      if (isSwipingDown && window.scrollY <= 0) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
       }
     };
 
-    document.addEventListener('touchmove', touchHandler, { passive: false });
-    return () => document.removeEventListener('touchmove', touchHandler);
+    // Use { passive: false } as requested to allow preventDefault()
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
   }, []);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditDeleteModalOpen, setIsEditDeleteModalOpen] = useState(false);
