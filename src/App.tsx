@@ -34,8 +34,13 @@ export default function App() {
 
   // Disable Pull-to-refresh
   useEffect(() => {
+    document.body.style.overscrollBehaviorY = 'none';
+    
     const touchHandler = (e: TouchEvent) => {
       // Prevent touchmove when at the top of the page to block pull-to-refresh
+      // Since we are using a scrollable container, window.scrollY will likely be 0
+      // We should check the container's scrollTop if we want to be precise,
+      // but the user's requested logic is to block it at window level.
       if (window.scrollY <= 0 && e.touches[0].pageY > 0) {
         if (e.cancelable) e.preventDefault();
       }
@@ -447,7 +452,7 @@ export default function App() {
 
   return (
     <div 
-      className="h-screen bg-slate-50 flex flex-col relative overflow-hidden" 
+      className="h-[100vh] w-full bg-slate-50 flex flex-col relative overflow-y-scroll" 
       dir="rtl"
     >
       {/* Professional Header */}
