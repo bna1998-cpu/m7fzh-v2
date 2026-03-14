@@ -6,6 +6,8 @@
 import { Home, ChevronDown, PlusCircle, Plus, Trash2, Wallet, X, Calendar, ArrowUpRight, ArrowDownLeft, Hash, Tag, DollarSign, Layers, Percent, Eye, ArrowRight, FileText, Download, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, useEffect } from 'react';
+// --- إضافة مكتبة الإحصائيات هنا ---
+import { Analytics } from '@vercel/analytics/react';
 
 interface InvestmentOperation {
   id: string;
@@ -129,6 +131,7 @@ export default function App() {
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false);
 
+  // Investment Form States
   const [invDate, setInvDate] = useState(new Date().toISOString().split('T')[0]);
   const [invSerial, setInvSerial] = useState('1');
   const [invType, setInvType] = useState<'deposit' | 'withdraw'>('deposit');
@@ -190,4 +193,4 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 -mt-4 relative z-20">
+      <main className="flex-1 px-4 -mt-4 relative z-
