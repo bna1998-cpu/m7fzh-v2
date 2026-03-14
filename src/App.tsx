@@ -92,6 +92,7 @@ export default function App() {
   const [editNumberValue, setEditNumberValue] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('تم التعديل بنجاح');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [toastPosition, setToastPosition] = useState<'bottom' | 'center'>('bottom');
   const [isSparkling, setIsSparkling] = useState(false);
   
@@ -178,6 +179,7 @@ export default function App() {
   const handleEnterAccount = () => {
     if (!selectedAccountId) {
       setToastMessage('اختر حساب من القائمة');
+      setToastType('error');
       setToastPosition('center');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 2000);
@@ -218,6 +220,7 @@ export default function App() {
     setIsEditNameModalOpen(false);
     setSelectedEditId('');
     setToastMessage('تم التعديل بنجاح');
+    setToastType('success');
     setToastPosition('bottom');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
@@ -267,7 +270,11 @@ export default function App() {
         const currentAmount = parseFloat(acc.amount) || 0;
         
         if (balanceOpType === 'withdraw' && opAmount > currentAmount) {
-          alert('الرصيد غير كافٍ لإتمام عملية السحب');
+          setToastMessage('رصيدك لا يسمح بالعملية');
+          setToastType('error');
+          setToastPosition('center');
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 2000);
           return acc;
         }
 
@@ -308,6 +315,7 @@ export default function App() {
       setBalanceError(false);
       
       setToastMessage(balanceOpType === 'deposit' ? 'تم اضافة الرصيد' : 'تم سحب الرصيد');
+      setToastType('success');
       setToastPosition('bottom');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 1000);
@@ -365,6 +373,15 @@ export default function App() {
         }
 
         // Apply the new/updated operation's effect
+        if (invType === 'deposit' && totalValue > currentAmount) {
+          setToastMessage('رصيدك لا يسمح بالعملية');
+          setToastType('error');
+          setToastPosition('center');
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 2000);
+          return acc;
+        }
+
         const newAmount = invType === 'deposit' 
           ? currentAmount - totalValue 
           : currentAmount + totalValue;
@@ -393,6 +410,7 @@ export default function App() {
     resetInvestmentForm(updatedAcc);
     setCurrentView('investments');
     setToastMessage('تمت العملية');
+    setToastType('success');
     setToastPosition('bottom');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
@@ -458,6 +476,7 @@ export default function App() {
     
     // Show Success Toast
     setToastMessage('تم انشاء الحساب');
+    setToastType('success');
     setToastPosition('bottom');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 1000);
@@ -594,10 +613,10 @@ export default function App() {
               className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 group"
             >
               <div className="bg-emerald-50 p-3 rounded-xl group-hover:bg-emerald-100 transition-colors">
-                <ArrowUpRight className="w-6 h-6 text-emerald-600" />
+                <DollarSign className="w-6 h-6 text-emerald-600" />
               </div>
               <div className="text-center">
-                <p className="font-bold text-slate-800 text-sm">إضافة رصيد</p>
+                <p className="font-bold text-slate-800 text-sm">إضافة / سحب رصيد</p>
                 <p className="text-[10px] text-slate-500">للحساب المختار</p>
               </div>
             </motion.button>
@@ -605,20 +624,28 @@ export default function App() {
             <motion.button 
               whileHover={{ y: -2 }}
               onClick={() => {
-                setBalanceOpType('withdraw');
-                setSelectedEditId(selectedAccountId || '');
-                setBalanceValue('');
-                setBalanceError(false);
-                setIsBalanceModalOpen(true);
+                if (!selectedAccountId) {
+                  setToastMessage('اختر حساب من القائمة');
+                  setToastType('error');
+                  setToastPosition('center');
+                  setShowToast(true);
+                  setTimeout(() => setShowToast(false), 2000);
+                  return;
+                }
+                const account = accounts.find(acc => acc.id === selectedAccountId);
+                if (account) {
+                  setInvestmentAccount(account);
+                  setIsStatementModalOpen(true);
+                }
               }}
               className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2 group"
             >
               <div className="bg-amber-50 p-3 rounded-xl group-hover:bg-amber-100 transition-colors">
-                <ArrowDownLeft className="w-6 h-6 text-amber-600" />
+                <FileText className="w-6 h-6 text-amber-600" />
               </div>
               <div className="text-center">
-                <p className="font-bold text-slate-800 text-sm">سحب رصيد</p>
-                <p className="text-[10px] text-slate-500">من الحساب المختار</p>
+                <p className="font-bold text-slate-800 text-sm">كشف حساب</p>
+                <p className="text-[10px] text-slate-500">عرض جميع العمليات</p>
               </div>
             </motion.button>
           </div>
@@ -656,7 +683,7 @@ export default function App() {
                 className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100/50 shadow-sm transition-all hover:shadow-md hover:bg-emerald-100/50"
               >
                 <FileText className="w-4 h-4" />
-                <span className="font-bold text-xs">كشف حساب</span>
+                <span className="font-bold text-xs">سجل العمليات</span>
               </motion.button>
 
               <motion.button 
@@ -817,6 +844,7 @@ export default function App() {
                       type="text" 
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
+                      maxLength={21}
                       placeholder="أدخل الاسم بالكامل"
                       className="w-full bg-slate-50 p-4 rounded-2xl text-right focus:outline-none focus:ring-2 focus:ring-indigo-500/20 border border-transparent focus:border-indigo-500 transition-all"
                     />
@@ -988,7 +1016,7 @@ export default function App() {
               <div className="p-5 flex items-center justify-between border-b border-slate-50 flex-shrink-0">
                 <div className="w-10" />
                 <span className="text-slate-400 font-medium">
-                  {balanceOpType === 'deposit' ? 'اختر العميل' : 'سحب رصيد'}
+                  إدارة الرصيد
                 </span>
                 <button 
                   onClick={() => {
@@ -1007,6 +1035,27 @@ export default function App() {
                   <label className="block text-sm font-semibold text-slate-400 text-right mr-1">رقم العميل</label>
                   <div className="bg-slate-100 p-4 rounded-2xl text-right font-bold text-lg text-slate-600 border border-slate-200">
                     {selectedEditId ? accounts.find(acc => acc.id === selectedEditId)?.customerNumber : '---'}
+                  </div>
+                </div>
+
+                {/* Type Selection (Deposit/Withdraw) */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-400 text-right mr-1">نوع العملية</label>
+                  <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                    <button 
+                      onClick={() => setBalanceOpType('deposit')}
+                      className={`flex-1 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${balanceOpType === 'deposit' ? 'bg-white shadow-md text-emerald-600' : 'text-slate-400'}`}
+                    >
+                      <ArrowDownLeft className={`w-5 h-5 ${balanceOpType === 'deposit' ? 'text-emerald-500' : 'text-slate-300'}`} />
+                      اضافة
+                    </button>
+                    <button 
+                      onClick={() => setBalanceOpType('withdraw')}
+                      className={`flex-1 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${balanceOpType === 'withdraw' ? 'bg-white shadow-md text-rose-600' : 'text-slate-400'}`}
+                    >
+                      <ArrowUpRight className={`w-5 h-5 ${balanceOpType === 'withdraw' ? 'text-rose-500' : 'text-slate-300'}`} />
+                      سحب
+                    </button>
                   </div>
                 </div>
 
@@ -1037,26 +1086,31 @@ export default function App() {
                     {/* Amount Input */}
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-slate-400 text-right mr-1">
-                        {balanceOpType === 'deposit' ? 'المبلغ المضاف' : 'المبلغ المسحوب'}
+                        {balanceOpType === 'deposit' ? 'المبلغ المودع' : 'المبلغ المسحوب'}
                       </label>
-                      <input 
-                        type="number" 
-                        placeholder={balanceError ? "لابد من ادخال مبلغ" : "0.00"}
-                        autoFocus
-                        value={balanceValue}
-                        onChange={(e) => {
-                          setBalanceValue(e.target.value);
-                          setBalanceError(false);
-                        }}
-                        className={`w-full bg-slate-50 p-5 rounded-2xl text-right focus:outline-none focus:ring-2 border border-transparent transition-all font-bold text-2xl text-slate-800 ${balanceError ? 'placeholder:text-red-500 border-red-200 bg-red-50' : ''} ${balanceOpType === 'deposit' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' : 'focus:ring-amber-500/20 focus:border-amber-500'}`}
-                      />
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          placeholder={balanceError ? "لابد من ادخال مبلغ" : "0.00"}
+                          autoFocus
+                          value={balanceValue}
+                          onChange={(e) => {
+                            setBalanceValue(e.target.value);
+                            setBalanceError(false);
+                          }}
+                          className={`w-full bg-slate-50 p-5 pr-14 rounded-2xl text-right focus:outline-none focus:ring-2 border border-transparent transition-all font-bold text-2xl text-slate-800 ${balanceError ? 'placeholder:text-red-500 border-red-200 bg-red-50' : ''} ${balanceOpType === 'deposit' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' : 'focus:ring-amber-500/20 focus:border-amber-500'}`}
+                        />
+                        <div className={`absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center ${balanceOpType === 'deposit' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                          {balanceOpType === 'deposit' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                        </div>
+                      </div>
                     </div>
 
                     <motion.button 
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleSaveBalanceOp}
-                      className={`w-full text-white font-bold py-5 rounded-2xl shadow-xl transition-all text-xl mt-4 ${balanceOpType === 'deposit' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'}`}
+                      className={`w-full text-white font-bold py-5 rounded-2xl shadow-xl transition-all text-xl mt-4 ${balanceOpType === 'deposit' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/30'}`}
                     >
                       تأكيد العملية
                     </motion.button>
@@ -1118,6 +1172,7 @@ export default function App() {
                       type="text" 
                       value={editNameValue}
                       onChange={(e) => setEditNameValue(e.target.value)}
+                      maxLength={21}
                       className="w-full bg-slate-50 p-4 rounded-2xl text-right focus:outline-none focus:ring-2 focus:ring-indigo-500/20 border border-transparent focus:border-indigo-500 transition-all font-bold text-slate-800"
                     />
                   </div>
@@ -1201,6 +1256,11 @@ export default function App() {
                 <Trash2 className="w-8 h-8 text-rose-500" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">هل تريد حذف هذا الحساب؟</h3>
+              {selectedDeleteId && (
+                <p className="text-rose-600 font-bold mb-2">
+                  {accounts.find(acc => acc.id === selectedDeleteId)?.name}
+                </p>
+              )}
               <p className="text-slate-500 text-sm mb-8">سيتم حذف الحساب وجميع العمليات المرتبطة به نهائياً. لا يمكن التراجع عن هذه العملية.</p>
               
               <div className="flex gap-3">
@@ -1327,15 +1387,15 @@ export default function App() {
                     <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100">
                       <button 
                         onClick={() => setInvType('deposit')}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${invType === 'deposit' ? 'bg-white shadow-sm text-rose-600' : 'text-slate-400'}`}
+                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${invType === 'deposit' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}
                       >
-                        إيداع
+                        شراء
                       </button>
                       <button 
                         onClick={() => setInvType('withdraw')}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${invType === 'withdraw' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}
+                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${invType === 'withdraw' ? 'bg-white shadow-sm text-rose-600' : 'text-slate-400'}`}
                       >
-                        سحب
+                        بيع
                       </button>
                     </div>
                   </div>
@@ -1406,7 +1466,7 @@ export default function App() {
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   onClick={handleSaveInvestment}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-5 rounded-2xl shadow-xl shadow-emerald-500/30 transition-all text-xl"
+                  className={`w-full text-white font-bold py-5 rounded-2xl shadow-xl transition-all text-xl ${invType === 'deposit' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/30'}`}
                 >
                   حفظ العملية
                 </motion.button>
@@ -1439,7 +1499,7 @@ export default function App() {
                     <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">كشف حساب تفصيلي</h3>
+                    <h3 className="font-bold text-lg">{currentView === 'investments' ? 'سجل حركة الاستثمارات' : 'كشف حركة الرصيد'}</h3>
                     <p className="text-slate-400 text-xs">{investmentAccount?.name}</p>
                   </div>
                 </div>
@@ -1454,15 +1514,27 @@ export default function App() {
               {/* Summary Cards */}
               <div className="grid grid-cols-3 gap-2 p-4 bg-slate-50 border-b border-slate-100">
                 <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1 leading-tight">إجمالي المشتريات</p>
-                  <p className="text-sm font-mono font-bold text-rose-600 break-all">
-                    {investmentAccount?.operations?.filter(op => op.type === 'deposit' && op.category !== 'إيداع نقدي' && op.category !== 'سحب نقدي').reduce((acc, op) => acc + parseFloat(op.totalValue), 0).toFixed(2)}
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1 leading-tight">إجمالي الإيداعات</p>
+                  <p className="text-sm font-mono font-bold text-emerald-600 break-all">
+                    {investmentAccount?.operations?.reduce((acc, op) => {
+                      const isCashDeposit = op.category === 'إضافة رصيد' || op.category === 'إيداع نقدي';
+                      const isCashWithdraw = op.category === 'سحب رصيد' || op.category === 'سحب نقدي';
+                      const isSell = op.type === 'withdraw' && !isCashDeposit && !isCashWithdraw;
+                      if (isCashDeposit || isSell) return acc + parseFloat(op.totalValue);
+                      return acc;
+                    }, 0).toFixed(2)}
                   </p>
                 </div>
                 <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1 leading-tight">إجمالي المبيعات</p>
-                  <p className="text-sm font-mono font-bold text-emerald-600 break-all">
-                    {investmentAccount?.operations?.filter(op => op.type === 'withdraw' && op.category !== 'إيداع نقدي' && op.category !== 'سحب نقدي').reduce((acc, op) => acc + parseFloat(op.totalValue), 0).toFixed(2)}
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1 leading-tight">إجمالي السحوبات</p>
+                  <p className="text-sm font-mono font-bold text-rose-600 break-all">
+                    {investmentAccount?.operations?.reduce((acc, op) => {
+                      const isCashDeposit = op.category === 'إضافة رصيد' || op.category === 'إيداع نقدي';
+                      const isCashWithdraw = op.category === 'سحب رصيد' || op.category === 'سحب نقدي';
+                      const isBuy = op.type === 'deposit' && !isCashDeposit && !isCashWithdraw;
+                      if (isCashWithdraw || isBuy) return acc + parseFloat(op.totalValue);
+                      return acc;
+                    }, 0).toFixed(2)}
                   </p>
                 </div>
                 <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
@@ -1557,8 +1629,12 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.95, y: 10, transition: { duration: 0.2 } }}
             className={`fixed ${toastPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-12'} left-1/2 z-[200] bg-white/90 backdrop-blur-md border border-slate-200/50 text-slate-800 px-6 py-4 rounded-2xl shadow-[0_15px_40px_-10px_rgba(0,0,0,0.1)] font-bold text-base flex items-center gap-4 min-w-[180px] justify-center`}
           >
-            <div className="bg-emerald-500/10 rounded-full p-2 flex items-center justify-center">
-              <Check className="w-5 h-5 text-emerald-600" />
+            <div className={`${toastType === 'success' ? 'bg-emerald-500/10' : 'bg-rose-500/10'} rounded-full p-2 flex items-center justify-center`}>
+              {toastType === 'success' ? (
+                <Check className="w-5 h-5 text-emerald-600" />
+              ) : (
+                <X className="w-5 h-5 text-rose-600" />
+              )}
             </div>
             <span className="tracking-wide">{toastMessage}</span>
           </motion.div>
