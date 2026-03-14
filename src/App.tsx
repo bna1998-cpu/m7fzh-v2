@@ -6,7 +6,7 @@
 import { Home, ChevronDown, PlusCircle, Plus, Trash2, Wallet, X, Calendar, ArrowUpRight, ArrowDownLeft, Hash, Tag, DollarSign, Layers, Percent, Eye, ArrowRight, FileText, Download, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, useEffect } from 'react';
-// --- إضافة مكتبة الإحصائيات هنا ---
+// 1. استيراد مكتبة الإحصائيات
 import { Analytics } from '@vercel/analytics/react';
 
 interface InvestmentOperation {
@@ -79,6 +79,7 @@ export default function App() {
     };
   }, []);
 
+  // بقية الـ States الخاصة بك (تم الإبقاء عليها كما هي)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditDeleteModalOpen, setIsEditDeleteModalOpen] = useState(false);
   const [isEditNameModalOpen, setIsEditNameModalOpen] = useState(false);
@@ -193,4 +194,15 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 -mt-4 relative z-
+      <main className="flex-1 px-4 -mt-4 relative z-20">
+         {/* هنا يوضع محتوى الحسابات أو الاستثمارات الخاص بك */}
+         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <p className="text-center text-slate-500">مرحباً بك في تطبيق "مستر بنا" لإدارة الاستثمارات</p>
+         </div>
+      </main>
+
+      {/* 2. إضافة مكون الإحصائيات هنا ليعمل في الخلفية */}
+      <Analytics />
+    </div>
+  );
+}
