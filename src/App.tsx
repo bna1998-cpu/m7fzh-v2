@@ -6,6 +6,7 @@
 import { Home, ChevronDown, PlusCircle, Plus, Trash2, Wallet, X, Calendar, ArrowUpRight, ArrowDownLeft, Hash, Tag, DollarSign, Layers, Percent, Eye, ArrowRight, FileText, Download, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 
 interface InvestmentOperation {
   id: string;
@@ -1641,5 +1642,6 @@ export default function App() {
         )}
       </AnimatePresence>
     </div>
+    <Analytics />
   );
 }
