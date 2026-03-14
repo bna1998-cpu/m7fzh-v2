@@ -6,8 +6,6 @@
 import { Home, ChevronDown, PlusCircle, Plus, Trash2, Wallet, X, Calendar, ArrowUpRight, ArrowDownLeft, Hash, Tag, DollarSign, Layers, Percent, Eye, ArrowRight, FileText, Download, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, useEffect } from 'react';
-// إضافة مكتبة الإحصائيات هنا
-import { Analytics } from '@vercel/analytics/react';
 
 interface InvestmentOperation {
   id: string;
@@ -193,13 +191,3 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 px-4 -mt-4 relative z-20">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-           <p className="text-center text-slate-500">تم استعادة الكود بنجاح يا أحمد!</p>
-        </div>
-      </main>
-
-      {/* إضافة الـ Analytics هنا */}
-      <Analytics />
-    </div>
-  );
-}
